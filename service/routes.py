@@ -57,38 +57,91 @@ def create_accounts():
         jsonify(message), status.HTTP_201_CREATED, {"Location": location_url}
     )
 
+
 ######################################################################
 # LIST ALL ACCOUNTS
 ######################################################################
 
-# ... place you code here to LIST accounts ...
+@app.route('/accounts', methods=["GET"])
+def list_accounts():
+    """
+    This endpoint retrieves all accounts
+    """
+    # Retrieve all account objects
+    accounts = Account.all()
+    # Create a list of serialized accounts
+    accounts_serialized = [account.serialize() for account in accounts]
+    # Log the number of accounts being returned
+    app.logger.info(f'Returning {len(accounts_serialized)} accounts')
+    # Return the serialized list with status code 200 - OK
+    return jsonify(accounts_serialized), status.HTTP_200_OK
 
 
 ######################################################################
 # READ AN ACCOUNT
 ######################################################################
 
-# ... place you code here to READ an account ...
+@app.route('/accounts/<int:account_id>', methods=["GET"])
+def read_account(account_id):
+    """
+    This endpoint retrieves an account based on the ID passed in as a parameter
+    """
+    # Call the 'find' method to return the account with the account id
+    account = Account.find(account_id)
+    # If account not found abort with 404
+    if not account:
+        abort(status.HTTP_404_NOT_FOUND, f'Account with id: {account_id} could not be found.')
+
+    # Return the serialized account object, along with a 200 - OK status code
+    return account.serialize(), status.HTTP_200_OK
 
 
 ######################################################################
 # UPDATE AN EXISTING ACCOUNT
 ######################################################################
 
-# ... place you code here to UPDATE an account ...
+@app.route('/accounts/<int:account_id>', methods=["PUT"])
+def update_account(account_id):
+    """
+    This endpoint retrieves then updates an existing account object based on the id pass in
+    """
+    # Use the 'find' method to retrieve the account with the passed in ID
+    account = Account.find(account_id)
+    # Abort with status code 404 if the account with the id was not found
+    if not account:
+        abort(status.HTTP_404_NOT_FOUND, f'Account with id: {account_id} could not be found.')
+    # Otherwise deserialize the object, then update it in the db
+    account.deserialize(request.get_json())
+    account.update()
+
+    # Return the serialized version of the updated account object along with a status
+    # code 200 - OK
+    return account.serialize(), status.HTTP_200_OK
 
 
 ######################################################################
 # DELETE AN ACCOUNT
 ######################################################################
 
-# ... place you code here to DELETE an account ...
+@app.route('/accounts/<int:account_id>', methods=['DELETE'])
+def delete_account(account_id):
+    """
+    This endpoint retrieves then deletes an account based on the id passed in as a parameter
+    """
+    # Use the 'find' method to retrieve the account with the passed in ID
+    account = Account.find(account_id)
+    # Abort with status code 404 if the account with the id was not found
+    if not account:
+        abort(status.HTTP_404_NOT_FOUND, f'Account with id: {account_id} could not be found.')
+    # If found call the 'delete' method on the account
+    account.delete()
+    # Return an empty body with a status code 204 - NO CONTENT
+    return "", status.HTTP_204_NO_CONTENT
 
 
 ######################################################################
 #  U T I L I T Y   F U N C T I O N S
 ######################################################################
-
 
 def check_content_type(media_type):
     """Checks that the media type is correct"""
